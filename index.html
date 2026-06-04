@@ -403,7 +403,7 @@
       </div>
     </section>
 
-    <p class="hint">Scurtături: Space +1 · − / + · R reset · Export copiază JSON în clipboard</p>
+    <p class="hint">Pe mobil: Export → Reset → Lipește (cel mai sigur). Import din fișier e fallback.</p>
 
     <p class="links">
       <a href="https://github.com/metusalem969-ro/demo-interactiv">GitHub</a>
@@ -414,6 +414,7 @@
 
   <script>
     const STORAGE_KEY = 'demo-interactiv-v1';
+    const LAST_EXPORT_KEY = 'demo-interactiv-last-export';
     const EXPORT_VERSION = 1;
     const VALID_THEMES = ['', 'verde', 'portocaliu', 'violet'];
     const body = document.body;
@@ -462,6 +463,23 @@
       let trimmed = String(text || '').replace(/^\uFEFF/, '').trim();
       if (!trimmed) throw new Error('empty');
 
+      if (trimmed.startsWith('data:')) {
+        const comma = trimmed.indexOf(',');
+        if (comma !== -1) {
+          const meta = trimmed.slice(0, comma);
+          trimmed = trimmed.slice(comma + 1);
+          if (/;base64/i.test(meta)) {
+            trimmed = atob(trimmed.replace(/\s/g, ''));
+          }
+        }
+      }
+
+      if (!trimmed.includes('{') && /^[A-Za-z0-9+/=\r\n]+$/.test(trimmed)) {
+        try {
+          trimmed = atob(trimmed.replace(/\s/g, ''));
+        } catch (_) {}
+      }
+
       const tryParse = (value) => {
         const parsed = JSON.parse(value);
         return typeof parsed === 'string' ? JSON.parse(parsed) : parsed;
@@ -507,39 +525,55 @@
       showToast('Date importate');
     }
 
-    function readFileText(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ''));
-        reader.onerror = () => reject(new Error('read'));
-        reader.readAsText(file);
-      });
+    function rememberExport(json) {
+      try {
+        sessionStorage.setItem(LAST_EXPORT_KEY, json);
+      } catch (_) {}
     }
 
-    function readFileBuffer(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error('read'));
-        reader.readAsArrayBuffer(file);
-      });
+    function readRememberedExport() {
+      try {
+        return sessionStorage.getItem(LAST_EXPORT_KEY) || '';
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function decodeCandidates(buffer) {
+      if (!buffer || !buffer.byteLength) return [];
+
+      const bytes = new Uint8Array(buffer);
+      const encodings = ['utf-8'];
+
+      if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
+        encodings.unshift('utf-16le');
+      } else if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
+        encodings.unshift('utf-16be');
+      } else if (bytes.length >= 4 && bytes[1] === 0x00 && bytes[3] === 0x00) {
+        encodings.unshift('utf-16le');
+      }
+
+      const texts = [];
+      for (const enc of encodings) {
+        try {
+          texts.push(new TextDecoder(enc).decode(buffer));
+        } catch (_) {}
+      }
+      return texts;
     }
 
     async function readFileContent(file) {
-      let text = await readFileText(file);
-      if (text.trim()) return text;
+      const buffer = await file.arrayBuffer();
+      if (!buffer.byteLength) throw new Error('empty');
 
-      const buffer = await readFileBuffer(file);
-      if (!buffer || !buffer.byteLength) throw new Error('empty');
+      for (const text of decodeCandidates(buffer)) {
+        try {
+          parseImportJson(text);
+          return text;
+        } catch (_) {}
+      }
 
-      const bytes = new Uint8Array(buffer);
-      if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
-        return new TextDecoder('utf-16le').decode(buffer);
-      }
-      if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
-        return new TextDecoder('utf-16be').decode(buffer);
-      }
-      return new TextDecoder('utf-8').decode(buffer);
+      throw new Error('parse');
     }
 
     function applyState() {
@@ -565,7 +599,7 @@
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     }
 
-    function exportData() {
+    async function exportData() {
       const payload = {
         version: EXPORT_VERSION,
         exportedAt: new Date().toISOString(),
@@ -581,58 +615,77 @@
       };
       const json = JSON.stringify(payload, null, 2);
       const filename = 'demo-interactiv-' + new Date().toISOString().slice(0, 10) + '.json';
-      const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+      rememberExport(json);
 
-      const finishExport = async () => {
+      const finishExport = async (message) => {
         try {
           await navigator.clipboard.writeText(json);
-          showToast('Exportate și copiate în clipboard');
+          showToast(message || 'Exportate și copiate în clipboard');
         } catch (_) {
-          showToast('Date exportate');
+          showToast(message || 'Date exportate');
         }
         pushHistory('export JSON');
         save();
       };
 
-      if (navigator.share && navigator.canShare) {
-        const file = new File([blob], filename, { type: 'application/json' });
-        if (navigator.canShare({ files: [file] })) {
-          navigator.share({ files: [file], title: 'Demo Interactiv' })
-            .then(finishExport)
-            .catch((err) => {
-              if (err && err.name === 'AbortError') return;
-              downloadBlob(blob, filename);
-              finishExport();
-            });
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: 'Demo Interactiv', text: json });
+          await finishExport('Exportate (Share + clipboard)');
           return;
+        } catch (err) {
+          if (err && err.name === 'AbortError') {
+            await finishExport('Exportate și copiate în clipboard');
+            return;
+          }
         }
       }
 
-      downloadBlob(blob, filename);
-      finishExport();
+      downloadBlob(new Blob([json], { type: 'text/plain;charset=utf-8' }), filename);
+      await finishExport();
     }
 
     async function importData(file) {
       if (!file) return;
+
       try {
-        const text = await readFileContent(file);
-        applyImportedText(text);
-      } catch (err) {
-        if (err && err.message === 'empty') {
-          showToast('Fișier gol — exportă din nou');
-        } else {
-          showToast('Fișier JSON invalid');
-        }
+        applyImportedText(await readFileContent(file));
+        return;
+      } catch (_) {}
+
+      const remembered = readRememberedExport();
+      if (remembered) {
+        try {
+          applyImportedText(remembered);
+          showToast('Importate din ultimul export');
+          return;
+        } catch (_) {}
       }
+
+      try {
+        applyImportedText(await navigator.clipboard.readText());
+        showToast('Importate din clipboard');
+        return;
+      } catch (_) {}
+
+      showToast('Import eșuat — apasă Lipește după Export');
     }
 
     async function importFromClipboard() {
+      const remembered = readRememberedExport();
+      if (remembered) {
+        try {
+          applyImportedText(remembered);
+          showToast('Importate din ultimul export');
+          return;
+        } catch (_) {}
+      }
+
       try {
-        const text = await navigator.clipboard.readText();
-        applyImportedText(text);
+        applyImportedText(await navigator.clipboard.readText());
       } catch (err) {
         if (err && (err.message === 'empty' || err.message === 'parse' || err.message === 'missing' || err.message === 'invalid')) {
-          showToast('JSON invalid în clipboard');
+          showToast('JSON invalid — Exportă din nou');
         } else {
           showToast('Nu s-a putut citi clipboard-ul');
         }

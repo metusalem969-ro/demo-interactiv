@@ -1,4 +1,4 @@
-const CACHE = 'demo-interactiv-v1';
+const CACHE = 'demo-interactiv-v2';
 const ASSETS = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', (event) => {
