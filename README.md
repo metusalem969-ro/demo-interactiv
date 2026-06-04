@@ -1,47 +1,35 @@
-# Exemplu Web
+# Demo Interactiv
 
-Pagină web statică exemplu — creată cap-coadă cu Cursor Cloud Agent pe **GitHub** și **GitLab**.
+Pagină web statică interactivă — publicată pe **GitHub** și **GitLab** Pages.
 
-## Ce face pagina
+## Funcții
 
-- Contor la click pe buton
-- 4 teme de culoare
-- Un singur fișier `index.html` (fără npm, fără backend)
+- Salut personalizat (nume salvat în browser)
+- Contor cu **+1**, **−**, **reset**
+- Record maxim
+- 4 teme de accent + mod luminos / întunecat
+- Istoric ultimele acțiuni
+- Confetti la fiecare 10 apăsări
+- Copiere statistici în clipboard
+- Scurtături tastatură: `Space` +1, `−`/`+`, `R` reset
+- Salvare automată (`localStorage`)
 
-## Linkuri site (după deploy)
+## Site live
 
 | Platformă | URL |
 |-----------|-----|
-| **GitHub Pages** | https://metusalem969-ro.github.io/exemplu-web/ |
+| **GitHub Pages** | https://metusalem969-ro.github.io/demo-interactiv/ |
 | **GitLab Pages** | https://exemplu-web-42f4c1.gitlab.io/ |
 
 ## Repository
 
 | Platformă | Link |
 |-----------|------|
-| **GitHub** | https://github.com/metusalem969-ro/exemplu-web |
-| **GitLab** | https://gitlab.com/Hercules-metusalem969/exemplu-web |
-
-## Structură proiect
-
-```
-exemplu-web/
-├── index.html       # pagina web
-├── README.md        # acest fișier
-├── .gitlab-ci.yml   # deploy GitLab Pages
-├── .nojekyll        # necesar pentru GitHub Pages
-└── AGENTS.md        # ghid pentru agenți Cursor
-```
-
-## Deploy
-
-- **GitLab**: push pe `main` → job CI `pages` publică în `public/`
-- **GitHub**: Settings → Pages → branch `main`, folder `/ (root)`
+| **GitHub** | https://github.com/metusalem969-ro/demo-interactiv |
+| **GitLab** | https://gitlab.com/Hercules-metusalem969/demo-interactiv |
 
 ## Dezvoltare locală
 
 ```bash
 python3 -m http.server 8080
 ```
-
-Deschide http://127.0.0.1:8080/

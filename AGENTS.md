@@ -1,21 +1,21 @@
-# AGENTS.md
+# AGENTS.md — Demo Interactiv
 
-## Cursor Cloud — Exemplu Web
+Proiect static: un `index.html`, fără npm.
 
-Proiect static minimal: un singur `index.html`, fără package manager.
+## Verificare
 
-### Rulare locală
+1. Introdu un nume → salutul se actualizează.
+2. **+1** / **−** / **Reset** → contor și istoric.
+3. La 10, 20… apăsări → confetti.
+4. **Copiază** → text în clipboard.
+5. Reîncarcă pagina → datele rămân (`localStorage`).
+
+## Rulare locală
 
 ```bash
 python3 -m http.server 8080
 ```
 
-### Verificare
+## Deploy
 
-1. Click pe **Apasă aici** → contorul crește.
-2. Schimbă tema (cercurile colorate) → accentul paginii se actualizează.
-
-### Deploy
-
-- GitLab CI (`.gitlab-ci.yml`) copiază `index.html` în `public/` pentru Pages.
-- GitHub Pages: branch `main`, root `/`.
+GitLab CI → `public/`; GitHub Pages din `main`.

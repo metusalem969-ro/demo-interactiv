@@ -3,18 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Exemplu Web — Demo cap-coadă</title>
-  <link rel="canonical" href="https://metusalem969-ro.github.io/exemplu-web/">
+  <title>Demo Interactiv — Pagină web</title>
+  <link rel="canonical" href="https://metusalem969-ro.github.io/demo-interactiv/">
+  <script>
+    (function () {
+      if (!/exemplu-web(\/|$)/i.test(location.pathname)) return;
+      location.replace(location.origin + location.pathname.replace(/exemplu-web/gi, 'demo-interactiv') + location.search + location.hash);
+    })();
+  </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       --bg: #0f1419;
+      --bg-grad: #1e293b;
       --card: #1a2332;
       --text: #e8eef7;
       --muted: #8b9cb3;
       --accent: #3b82f6;
       --accent-glow: rgba(59, 130, 246, 0.35);
+      --border: rgba(255, 255, 255, 0.08);
+    }
+
+    body.mode-light {
+      --bg: #f0f4f8;
+      --bg-grad: #dbeafe;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: rgba(15, 23, 42, 0.1);
     }
 
     body.theme-verde { --accent: #22c55e; --accent-glow: rgba(34, 197, 94, 0.35); }
@@ -24,89 +41,161 @@
     html, body {
       min-height: 100%;
       font-family: "Segoe UI", system-ui, sans-serif;
-      background: radial-gradient(ellipse 100% 80% at 50% 0%, #1e293b 0%, var(--bg) 55%);
+      background: radial-gradient(ellipse 100% 80% at 50% 0%, var(--bg-grad) 0%, var(--bg) 55%);
       color: var(--text);
+      transition: background 0.4s ease, color 0.3s ease;
     }
 
     .wrap {
-      max-width: 520px;
+      max-width: 560px;
       margin: 0 auto;
-      padding: 2.5rem 1.25rem 3rem;
+      padding: 2rem 1.25rem 3rem;
       display: flex;
       flex-direction: column;
-      gap: 1.75rem;
+      gap: 1.5rem;
       align-items: center;
-      text-align: center;
     }
 
+    .top-bar {
+      width: 100%;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    .icon-btn {
+      font: inherit;
+      font-size: 0.8rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .icon-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+    .hero { text-align: center; width: 100%; }
+
     .badge {
-      font-size: 0.75rem;
+      display: inline-block;
+      font-size: 0.7rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--accent);
       border: 1px solid var(--accent);
-      padding: 0.35rem 0.85rem;
+      padding: 0.3rem 0.75rem;
       border-radius: 999px;
       background: color-mix(in srgb, var(--accent) 12%, transparent);
+      margin-bottom: 0.75rem;
     }
 
     h1 {
-      font-size: clamp(1.75rem, 5vw, 2.25rem);
+      font-size: clamp(1.6rem, 5vw, 2.1rem);
       font-weight: 700;
       line-height: 1.2;
+      margin-bottom: 0.35rem;
+    }
+
+    .greeting {
+      font-size: 1.05rem;
+      color: var(--accent);
+      min-height: 1.4em;
+      margin-bottom: 0.5rem;
     }
 
     .lead {
       color: var(--muted);
-      font-size: 1.05rem;
-      line-height: 1.55;
-      max-width: 38ch;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      max-width: 40ch;
+      margin: 0 auto;
     }
 
     .card {
       width: 100%;
       background: var(--card);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
       border-radius: 1.25rem;
-      padding: 1.75rem;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      padding: 1.5rem;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+      transition: background 0.3s ease;
+    }
+
+    .field {
+      width: 100%;
+      margin-bottom: 1rem;
+      text-align: left;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .field input {
+      width: 100%;
+      font: inherit;
+      font-size: 1rem;
+      padding: 0.65rem 0.9rem;
+      border-radius: 0.65rem;
+      border: 1px solid var(--border);
+      background: color-mix(in srgb, var(--bg) 50%, var(--card));
+      color: var(--text);
+    }
+
+    .field input:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .counter-wrap {
+      text-align: center;
+      margin-bottom: 1rem;
     }
 
     .counter {
-      font-size: 3.5rem;
+      font-size: 3.25rem;
       font-weight: 800;
       color: var(--accent);
-      text-shadow: 0 0 32px var(--accent-glow);
+      text-shadow: 0 0 28px var(--accent-glow);
       line-height: 1;
-      margin-bottom: 0.25rem;
+      transition: transform 0.2s ease;
     }
 
-    .counter-label {
-      font-size: 0.9rem;
+    .counter.bump { transform: scale(1.12); }
+
+    .counter-label { font-size: 0.85rem; color: var(--muted); margin-top: 0.25rem; }
+
+    .counter-meta {
+      font-size: 0.8rem;
       color: var(--muted);
-      margin-bottom: 1.25rem;
+      margin-top: 0.35rem;
     }
 
     .themes {
       display: flex;
       gap: 0.5rem;
       justify-content: center;
-      flex-wrap: wrap;
-      margin-bottom: 1.25rem;
+      margin-bottom: 1rem;
     }
 
     .themes button {
-      width: 2.25rem;
-      height: 2.25rem;
+      width: 2rem;
+      height: 2rem;
       border-radius: 50%;
-      border: 2px solid rgba(255, 255, 255, 0.2);
+      border: 2px solid var(--border);
       cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.2s ease;
+      transition: transform 0.15s ease;
     }
 
-    .themes button:hover { transform: scale(1.08); }
+    .themes button:hover { transform: scale(1.1); }
     .themes button[aria-pressed="true"] {
-      box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent);
+      box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--accent);
     }
 
     .btn-albastru { background: #3b82f6; }
@@ -114,86 +203,382 @@
     .btn-portocaliu { background: #f97316; }
     .btn-violet { background: #a855f7; }
 
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 0.75rem;
+    }
+
     button.action {
       font: inherit;
-      font-size: 1rem;
-      padding: 0.85rem 2rem;
+      font-size: 0.95rem;
+      padding: 0.7rem 1.25rem;
       border: none;
       border-radius: 999px;
       cursor: pointer;
-      background: var(--accent);
-      color: #fff;
-      box-shadow: 0 6px 24px var(--accent-glow);
       transition: transform 0.15s ease, filter 0.2s ease;
     }
 
-    button.action:hover { filter: brightness(1.08); }
-    button.action:active { transform: scale(0.97); }
+    button.action:active { transform: scale(0.96); }
+
+    button.primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+
+    button.primary:hover { filter: brightness(1.08); }
+
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    button.secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    button.danger { color: #f87171; border-color: rgba(248, 113, 113, 0.4); }
+
+    .history {
+      width: 100%;
+      margin-top: 0.5rem;
+      text-align: left;
+    }
+
+    .history h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .history ul {
+      list-style: none;
+      font-size: 0.8rem;
+      color: var(--muted);
+      max-height: 6rem;
+      overflow-y: auto;
+    }
+
+    .history li {
+      padding: 0.3rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .history li:last-child { border-bottom: none; }
+
+    .toast {
+      position: fixed;
+      bottom: 1.25rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(120%);
+      background: var(--card);
+      border: 1px solid var(--accent);
+      color: var(--text);
+      padding: 0.6rem 1.1rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      transition: transform 0.35s ease, opacity 0.35s ease;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .confetti {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 5;
+    }
+
+    .confetti span {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      top: -10px;
+      animation: fall 1.2s ease-in forwards;
+    }
+
+    @keyframes fall {
+      to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
 
     .links {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: var(--muted);
-      line-height: 1.8;
+      line-height: 1.75;
+      text-align: center;
     }
 
-    .links a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
+    .links a { color: var(--accent); text-decoration: none; }
     .links a:hover { text-decoration: underline; }
+
+    .hint {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+      opacity: 0.85;
+    }
   </style>
 </head>
 <body>
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
+  <p class="toast" id="toast" role="status"></p>
+
   <main class="wrap">
-    <span class="badge">Repo exemplu</span>
-    <h1>Pagină web de la zero</h1>
-    <p class="lead">
-      Demo cap-coadă: repository pe GitHub și GitLab, același cod,
-      publicat pe ambele platforme cu Pages.
-    </p>
+    <div class="top-bar">
+      <button type="button" class="icon-btn" id="btn-mode" aria-pressed="false">Mod luminos</button>
+    </div>
 
-    <section class="card" aria-labelledby="counter-title">
-      <p class="counter" id="count" aria-live="polite">0</p>
-      <p class="counter-label" id="counter-title">Apăsări pe buton</p>
+    <header class="hero">
+      <span class="badge">Demo interactiv</span>
+      <h1>Demo Interactiv</h1>
+      <p class="greeting" id="greeting">Salut!</p>
+      <p class="lead">Contor, teme, istoric și salvare automată în browser.</p>
+    </header>
 
-      <div class="themes" role="group" aria-label="Temă culoare">
+    <section class="card">
+      <div class="field">
+        <label for="name">Numele tău</label>
+        <input type="text" id="name" placeholder="ex. Maria" maxlength="32" autocomplete="nickname">
+      </div>
+
+      <div class="counter-wrap">
+        <p class="counter" id="count" aria-live="polite">0</p>
+        <p class="counter-label">Apăsări</p>
+        <p class="counter-meta" id="meta">Record: 0</p>
+      </div>
+
+      <div class="themes" role="group" aria-label="Temă accent">
         <button type="button" class="btn-albastru" data-theme="" aria-pressed="true" title="Albastru"></button>
         <button type="button" class="btn-verde" data-theme="verde" aria-pressed="false" title="Verde"></button>
         <button type="button" class="btn-portocaliu" data-theme="portocaliu" aria-pressed="false" title="Portocaliu"></button>
         <button type="button" class="btn-violet" data-theme="violet" aria-pressed="false" title="Violet"></button>
       </div>
 
-      <button type="button" class="action" id="btn-click">Apasă aici</button>
+      <div class="btn-row">
+        <button type="button" class="action secondary" id="btn-minus" title="Scade (−)">−</button>
+        <button type="button" class="action primary" id="btn-plus" title="Crește (Space)">+1</button>
+        <button type="button" class="action secondary danger" id="btn-reset" title="Reset (R)">Reset</button>
+        <button type="button" class="action secondary" id="btn-copy" title="Copiază statistică">Copiază</button>
+      </div>
+
+      <div class="history">
+        <h2>Istoric recent</h2>
+        <ul id="history-list">
+          <li>—</li>
+        </ul>
+      </div>
     </section>
 
+    <p class="hint">Scurtături: Space +1 · − / + · R reset</p>
+
     <p class="links">
-      GitHub:
-      <a href="https://github.com/metusalem969-ro/exemplu-web">metusalem969-ro/exemplu-web</a><br>
-      GitLab:
-      <a href="https://gitlab.com/Hercules-metusalem969/exemplu-web">Hercules-metusalem969/exemplu-web</a>
+      <a href="https://github.com/metusalem969-ro/demo-interactiv">GitHub</a>
+      ·
+      <a href="https://gitlab.com/Hercules-metusalem969/demo-interactiv">GitLab</a>
     </p>
   </main>
 
   <script>
+    const STORAGE_KEY = 'demo-interactiv-v1';
     const body = document.body;
     const countEl = document.getElementById('count');
-    const btn = document.getElementById('btn-click');
+    const metaEl = document.getElementById('meta');
+    const greetingEl = document.getElementById('greeting');
+    const nameInput = document.getElementById('name');
+    const historyList = document.getElementById('history-list');
+    const toast = document.getElementById('toast');
+    const confettiRoot = document.getElementById('confetti');
     const themeBtns = document.querySelectorAll('.themes button');
-    let n = 0;
+    const btnPlus = document.getElementById('btn-plus');
+    const btnMinus = document.getElementById('btn-minus');
+    const btnReset = document.getElementById('btn-reset');
+    const btnCopy = document.getElementById('btn-copy');
+    const btnMode = document.getElementById('btn-mode');
 
-    btn.addEventListener('click', () => {
-      n += 1;
-      countEl.textContent = String(n);
+    const state = {
+      count: 0,
+      record: 0,
+      name: '',
+      theme: '',
+      light: false,
+      history: []
+    };
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        Object.assign(state, JSON.parse(raw));
+      } catch (_) {}
+    }
+
+    function save() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (_) {}
+    }
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    function updateGreeting() {
+      const n = state.name.trim();
+      greetingEl.textContent = n ? 'Salut, ' + n + '!' : 'Salut!';
+    }
+
+    function renderHistory() {
+      if (!state.history.length) {
+        historyList.innerHTML = '<li>—</li>';
+        return;
+      }
+      historyList.innerHTML = state.history
+        .map((line) => '<li>' + line + '</li>')
+        .join('');
+    }
+
+    function applyTheme() {
+      body.classList.remove('theme-verde', 'theme-portocaliu', 'theme-violet');
+      if (state.theme) body.classList.add('theme-' + state.theme);
+      themeBtns.forEach((b) => {
+        b.setAttribute('aria-pressed', String(b.dataset.theme === state.theme));
+      });
+    }
+
+    function applyMode() {
+      body.classList.toggle('mode-light', state.light);
+      btnMode.textContent = state.light ? 'Mod întunecat' : 'Mod luminos';
+      btnMode.setAttribute('aria-pressed', String(state.light));
+    }
+
+    function renderCount(animate) {
+      countEl.textContent = String(state.count);
+      metaEl.textContent = 'Record: ' + state.record;
+      if (animate) {
+        countEl.classList.add('bump');
+        setTimeout(() => countEl.classList.remove('bump'), 200);
+      }
+    }
+
+    function pushHistory(text) {
+      const t = new Date().toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      state.history.unshift(t + ' — ' + text);
+      state.history = state.history.slice(0, 8);
+      renderHistory();
+    }
+
+    function confetti() {
+      confettiRoot.innerHTML = '';
+      const colors = ['#3b82f6', '#22c55e', '#f97316', '#a855f7', '#facc15'];
+      for (let i = 0; i < 40; i++) {
+        const s = document.createElement('span');
+        s.style.left = Math.random() * 100 + '%';
+        s.style.background = colors[i % colors.length];
+        s.style.animationDelay = Math.random() * 0.4 + 's';
+        confettiRoot.appendChild(s);
+      }
+      setTimeout(() => { confettiRoot.innerHTML = ''; }, 1400);
+    }
+
+    function add(delta) {
+      state.count = Math.max(0, state.count + delta);
+      if (state.count > state.record) state.record = state.count;
+      renderCount(true);
+      if (delta > 0) {
+        pushHistory('+' + delta + ' → ' + state.count);
+        if (state.count > 0 && state.count % 10 === 0) {
+          confetti();
+          showToast('Felicitări! Ai ajuns la ' + state.count + '!');
+        }
+      } else if (delta < 0) {
+        pushHistory(delta + ' → ' + state.count);
+      }
+      save();
+    }
+
+    function resetAll() {
+      state.count = 0;
+      renderCount(false);
+      pushHistory('reset la 0');
+      save();
+      showToast('Contor resetat');
+    }
+
+    btnPlus.addEventListener('click', () => add(1));
+    btnMinus.addEventListener('click', () => { if (state.count > 0) add(-1); });
+    btnReset.addEventListener('click', resetAll);
+
+    btnCopy.addEventListener('click', async () => {
+      const text = (state.name.trim() ? state.name.trim() + ': ' : '') +
+        'apăsări ' + state.count + ', record ' + state.record;
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast('Copiat în clipboard');
+      } catch (_) {
+        showToast('Nu s-a putut copia');
+      }
+    });
+
+    nameInput.addEventListener('input', () => {
+      state.name = nameInput.value;
+      updateGreeting();
+      save();
     });
 
     themeBtns.forEach((b) => {
       b.addEventListener('click', () => {
-        const theme = b.dataset.theme;
-        body.className = theme ? 'theme-' + theme : '';
-        themeBtns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        state.theme = b.dataset.theme;
+        applyTheme();
+        pushHistory('temă ' + (state.theme || 'albastru'));
+        save();
       });
     });
+
+    btnMode.addEventListener('click', () => {
+      state.light = !state.light;
+      applyMode();
+      pushHistory(state.light ? 'mod luminos' : 'mod întunecat');
+      save();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.target === nameInput) return;
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        add(1);
+      } else if (e.key === '-' || e.key === '_') {
+        if (state.count > 0) add(-1);
+      } else if (e.key === '+' || e.key === '=') {
+        add(1);
+      } else if (e.key === 'r' || e.key === 'R') {
+        resetAll();
+      }
+    });
+
+    load();
+    nameInput.value = state.name;
+    updateGreeting();
+    applyTheme();
+    applyMode();
+    renderCount(false);
+    renderHistory();
+    save();
   </script>
 </body>
 </html>
