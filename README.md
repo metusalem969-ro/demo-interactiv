@@ -13,7 +13,7 @@ Pagină web statică exemplu — creată cap-coadă cu Cursor Cloud Agent pe **G
 | Platformă | URL |
 |-----------|-----|
 | **GitHub Pages** | https://metusalem969-ro.github.io/exemplu-web/ |
-| **GitLab Pages** | *(vezi Settings → Pages după primul pipeline pe `main`)* |
+| **GitLab Pages** | https://exemplu-web-42f4c1.gitlab.io/ |
 
 ## Repository
 
