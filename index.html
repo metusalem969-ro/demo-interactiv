@@ -4,7 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Demo Interactiv — Pagină web</title>
+  <meta name="description" content="Contor interactiv cu teme, istoric, confetti și salvare automată în browser.">
+  <meta name="theme-color" content="#3b82f6">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="manifest" href="manifest.json">
   <link rel="canonical" href="https://metusalem969-ro.github.io/demo-interactiv/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Demo Interactiv — Pagină web">
+  <meta property="og:description" content="Contor interactiv cu teme, istoric, confetti și salvare automată în browser.">
+  <meta property="og:url" content="https://metusalem969-ro.github.io/demo-interactiv/">
+  <meta property="og:locale" content="ro_RO">
+  <meta property="og:image" content="https://metusalem969-ro.github.io/demo-interactiv/icon.svg">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Demo Interactiv — Pagină web">
+  <meta name="twitter:description" content="Contor interactiv cu teme, istoric, confetti și salvare automată în browser.">
   <script>
     (function () {
       if (!/exemplu-web(\/|$)/i.test(location.pathname)) return;
@@ -374,6 +388,12 @@
         <button type="button" class="action secondary" id="btn-copy" title="Copiază statistică">Copiază</button>
       </div>
 
+      <div class="btn-row">
+        <button type="button" class="action secondary" id="btn-export" title="Descarcă date ca JSON">Exportă</button>
+        <button type="button" class="action secondary" id="btn-import" title="Încarcă date din JSON">Importă</button>
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
+      </div>
+
       <div class="history">
         <h2>Istoric recent</h2>
         <ul id="history-list">
@@ -393,6 +413,8 @@
 
   <script>
     const STORAGE_KEY = 'demo-interactiv-v1';
+    const EXPORT_VERSION = 1;
+    const VALID_THEMES = ['', 'verde', 'portocaliu', 'violet'];
     const body = document.body;
     const countEl = document.getElementById('count');
     const metaEl = document.getElementById('meta');
@@ -406,6 +428,9 @@
     const btnMinus = document.getElementById('btn-minus');
     const btnReset = document.getElementById('btn-reset');
     const btnCopy = document.getElementById('btn-copy');
+    const btnExport = document.getElementById('btn-export');
+    const btnImport = document.getElementById('btn-import');
+    const importFile = document.getElementById('import-file');
     const btnMode = document.getElementById('btn-mode');
 
     const state = {
@@ -429,6 +454,71 @@
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       } catch (_) {}
+    }
+
+    function normalizeImportedState(raw) {
+      const data = raw && raw.state ? raw.state : raw;
+      if (!data || typeof data !== 'object') throw new Error('invalid');
+      return {
+        count: Math.max(0, Number(data.count) || 0),
+        record: Math.max(0, Number(data.record) || 0),
+        name: String(data.name || '').slice(0, 32),
+        theme: VALID_THEMES.includes(data.theme) ? data.theme : '',
+        light: Boolean(data.light),
+        history: Array.isArray(data.history) ? data.history.map(String).slice(0, 8) : []
+      };
+    }
+
+    function applyState() {
+      if (state.count > state.record) state.record = state.count;
+      nameInput.value = state.name;
+      updateGreeting();
+      applyTheme();
+      applyMode();
+      renderCount(false);
+      renderHistory();
+      save();
+    }
+
+    function exportData() {
+      const payload = {
+        version: EXPORT_VERSION,
+        exportedAt: new Date().toISOString(),
+        app: 'demo-interactiv',
+        state: {
+          count: state.count,
+          record: state.record,
+          name: state.name,
+          theme: state.theme,
+          light: state.light,
+          history: state.history.slice()
+        }
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'demo-interactiv-' + new Date().toISOString().slice(0, 10) + '.json';
+      link.click();
+      URL.revokeObjectURL(link.href);
+      pushHistory('export JSON');
+      save();
+      showToast('Date exportate');
+    }
+
+    function importData(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          Object.assign(state, normalizeImportedState(JSON.parse(reader.result)));
+          applyState();
+          pushHistory('import JSON');
+          showToast('Date importate');
+        } catch (_) {
+          showToast('Fișier JSON invalid');
+        }
+      };
+      reader.onerror = () => showToast('Nu s-a putut citi fișierul');
+      reader.readAsText(file);
     }
 
     function showToast(msg) {
@@ -524,6 +614,16 @@
     btnMinus.addEventListener('click', () => { if (state.count > 0) add(-1); });
     btnReset.addEventListener('click', resetAll);
 
+    btnExport.addEventListener('click', exportData);
+
+    btnImport.addEventListener('click', () => importFile.click());
+
+    importFile.addEventListener('change', () => {
+      const file = importFile.files && importFile.files[0];
+      if (file) importData(file);
+      importFile.value = '';
+    });
+
     btnCopy.addEventListener('click', async () => {
       const text = (state.name.trim() ? state.name.trim() + ': ' : '') +
         'apăsări ' + state.count + ', record ' + state.record;
@@ -572,13 +672,11 @@
     });
 
     load();
-    nameInput.value = state.name;
-    updateGreeting();
-    applyTheme();
-    applyMode();
-    renderCount(false);
-    renderHistory();
-    save();
+    applyState();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
   </script>
 </body>
 </html>

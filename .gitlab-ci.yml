@@ -7,7 +7,7 @@ pages:
   stage: deploy
   script:
     - mkdir -p public
-    - cp index.html .nojekyll public/
+    - cp index.html manifest.json sw.js icon.svg .nojekyll public/
   artifacts:
     paths:
       - public

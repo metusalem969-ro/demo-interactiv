@@ -11,6 +11,8 @@ Pagină web statică interactivă — publicată pe **GitHub** și **GitLab** Pa
 - Istoric ultimele acțiuni
 - Confetti la fiecare 10 apăsări
 - Copiere statistici în clipboard
+- Export / import date ca JSON (backup sau mutare între dispozitive)
+- PWA: instalare pe ecran principal, funcționare offline (cache)
 - Scurtături tastatură: `Space` +1, `−`/`+`, `R` reset
 - Salvare automată (`localStorage`)
 
