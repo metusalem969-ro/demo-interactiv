@@ -391,7 +391,8 @@
       <div class="btn-row">
         <button type="button" class="action secondary" id="btn-export" title="Descarcă date ca JSON">Exportă</button>
         <button type="button" class="action secondary" id="btn-import" title="Încarcă date din JSON">Importă</button>
-        <input type="file" id="import-file" accept=".json,application/json,text/json,text/plain" hidden>
+        <button type="button" class="action secondary" id="btn-paste" title="Importă JSON din clipboard">Lipește</button>
+        <input type="file" id="import-file" accept=".json,application/json,text/json,text/plain,*/*" hidden>
       </div>
 
       <div class="history">
@@ -402,7 +403,7 @@
       </div>
     </section>
 
-    <p class="hint">Scurtături: Space +1 · − / + · R reset</p>
+    <p class="hint">Scurtături: Space +1 · − / + · R reset · Export copiază JSON în clipboard</p>
 
     <p class="links">
       <a href="https://github.com/metusalem969-ro/demo-interactiv">GitHub</a>
@@ -430,6 +431,7 @@
     const btnCopy = document.getElementById('btn-copy');
     const btnExport = document.getElementById('btn-export');
     const btnImport = document.getElementById('btn-import');
+    const btnPaste = document.getElementById('btn-paste');
     const importFile = document.getElementById('import-file');
     const btnMode = document.getElementById('btn-mode');
 
@@ -457,15 +459,36 @@
     }
 
     function parseImportJson(text) {
-      const trimmed = String(text || '').replace(/^\uFEFF/, '').trim();
+      let trimmed = String(text || '').replace(/^\uFEFF/, '').trim();
       if (!trimmed) throw new Error('empty');
-      return JSON.parse(trimmed);
+
+      const tryParse = (value) => {
+        const parsed = JSON.parse(value);
+        return typeof parsed === 'string' ? JSON.parse(parsed) : parsed;
+      };
+
+      try {
+        return tryParse(trimmed);
+      } catch (_) {}
+
+      const start = trimmed.indexOf('{');
+      const end = trimmed.lastIndexOf('}');
+      if (start >= 0 && end > start) {
+        return tryParse(trimmed.slice(start, end + 1));
+      }
+
+      throw new Error('parse');
+    }
+
+    function extractStateData(raw) {
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('invalid');
+      if (raw.state && typeof raw.state === 'object' && !Array.isArray(raw.state)) return raw.state;
+      if (raw.count !== undefined || raw.record !== undefined || raw.name !== undefined) return raw;
+      throw new Error('missing');
     }
 
     function normalizeImportedState(raw) {
-      const data = raw && typeof raw.state === 'object' && raw.state !== null ? raw.state : raw;
-      if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('invalid');
-      if (!('count' in data) && !('record' in data) && !('name' in data)) throw new Error('missing');
+      const data = extractStateData(raw);
       return {
         count: Math.max(0, Number(data.count) || 0),
         record: Math.max(0, Number(data.record) || 0),
@@ -474,6 +497,49 @@
         light: Boolean(data.light),
         history: Array.isArray(data.history) ? data.history.map(String).slice(0, 8) : []
       };
+    }
+
+    function applyImportedText(text) {
+      Object.assign(state, normalizeImportedState(parseImportJson(text)));
+      applyState();
+      pushHistory('import JSON');
+      save();
+      showToast('Date importate');
+    }
+
+    function readFileText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('read'));
+        reader.readAsText(file);
+      });
+    }
+
+    function readFileBuffer(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('read'));
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    async function readFileContent(file) {
+      let text = await readFileText(file);
+      if (text.trim()) return text;
+
+      const buffer = await readFileBuffer(file);
+      if (!buffer || !buffer.byteLength) throw new Error('empty');
+
+      const bytes = new Uint8Array(buffer);
+      if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
+        return new TextDecoder('utf-16le').decode(buffer);
+      }
+      if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
+        return new TextDecoder('utf-16be').decode(buffer);
+      }
+      return new TextDecoder('utf-8').decode(buffer);
     }
 
     function applyState() {
@@ -517,10 +583,15 @@
       const filename = 'demo-interactiv-' + new Date().toISOString().slice(0, 10) + '.json';
       const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
 
-      const finishExport = () => {
+      const finishExport = async () => {
+        try {
+          await navigator.clipboard.writeText(json);
+          showToast('Exportate și copiate în clipboard');
+        } catch (_) {
+          showToast('Date exportate');
+        }
         pushHistory('export JSON');
         save();
-        showToast('Date exportate');
       };
 
       if (navigator.share && navigator.canShare) {
@@ -541,25 +612,31 @@
       finishExport();
     }
 
-    function importData(file) {
-      if (!file || !file.size) {
-        showToast('Fișier gol — exportă din nou');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          Object.assign(state, normalizeImportedState(parseImportJson(reader.result)));
-          applyState();
-          pushHistory('import JSON');
-          save();
-          showToast('Date importate');
-        } catch (_) {
+    async function importData(file) {
+      if (!file) return;
+      try {
+        const text = await readFileContent(file);
+        applyImportedText(text);
+      } catch (err) {
+        if (err && err.message === 'empty') {
+          showToast('Fișier gol — exportă din nou');
+        } else {
           showToast('Fișier JSON invalid');
         }
-      };
-      reader.onerror = () => showToast('Nu s-a putut citi fișierul');
-      reader.readAsText(file, 'UTF-8');
+      }
+    }
+
+    async function importFromClipboard() {
+      try {
+        const text = await navigator.clipboard.readText();
+        applyImportedText(text);
+      } catch (err) {
+        if (err && (err.message === 'empty' || err.message === 'parse' || err.message === 'missing' || err.message === 'invalid')) {
+          showToast('JSON invalid în clipboard');
+        } else {
+          showToast('Nu s-a putut citi clipboard-ul');
+        }
+      }
     }
 
     function showToast(msg) {
@@ -658,6 +735,8 @@
     btnExport.addEventListener('click', exportData);
 
     btnImport.addEventListener('click', () => importFile.click());
+
+    btnPaste.addEventListener('click', importFromClipboard);
 
     importFile.addEventListener('change', () => {
       const file = importFile.files && importFile.files[0];
