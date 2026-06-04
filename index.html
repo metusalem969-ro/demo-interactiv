@@ -391,7 +391,7 @@
       <div class="btn-row">
         <button type="button" class="action secondary" id="btn-export" title="Descarcă date ca JSON">Exportă</button>
         <button type="button" class="action secondary" id="btn-import" title="Încarcă date din JSON">Importă</button>
-        <input type="file" id="import-file" accept="application/json,.json" hidden>
+        <input type="file" id="import-file" accept=".json,application/json,text/json,text/plain" hidden>
       </div>
 
       <div class="history">
@@ -456,9 +456,16 @@
       } catch (_) {}
     }
 
+    function parseImportJson(text) {
+      const trimmed = String(text || '').replace(/^\uFEFF/, '').trim();
+      if (!trimmed) throw new Error('empty');
+      return JSON.parse(trimmed);
+    }
+
     function normalizeImportedState(raw) {
-      const data = raw && raw.state ? raw.state : raw;
-      if (!data || typeof data !== 'object') throw new Error('invalid');
+      const data = raw && typeof raw.state === 'object' && raw.state !== null ? raw.state : raw;
+      if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('invalid');
+      if (!('count' in data) && !('record' in data) && !('name' in data)) throw new Error('missing');
       return {
         count: Math.max(0, Number(data.count) || 0),
         record: Math.max(0, Number(data.record) || 0),
@@ -480,6 +487,18 @@
       save();
     }
 
+    function downloadBlob(blob, filename) {
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      link.download = filename;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+
     function exportData() {
       const payload = {
         version: EXPORT_VERSION,
@@ -494,31 +513,53 @@
           history: state.history.slice()
         }
       };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'demo-interactiv-' + new Date().toISOString().slice(0, 10) + '.json';
-      link.click();
-      URL.revokeObjectURL(link.href);
-      pushHistory('export JSON');
-      save();
-      showToast('Date exportate');
+      const json = JSON.stringify(payload, null, 2);
+      const filename = 'demo-interactiv-' + new Date().toISOString().slice(0, 10) + '.json';
+      const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+
+      const finishExport = () => {
+        pushHistory('export JSON');
+        save();
+        showToast('Date exportate');
+      };
+
+      if (navigator.share && navigator.canShare) {
+        const file = new File([blob], filename, { type: 'application/json' });
+        if (navigator.canShare({ files: [file] })) {
+          navigator.share({ files: [file], title: 'Demo Interactiv' })
+            .then(finishExport)
+            .catch((err) => {
+              if (err && err.name === 'AbortError') return;
+              downloadBlob(blob, filename);
+              finishExport();
+            });
+          return;
+        }
+      }
+
+      downloadBlob(blob, filename);
+      finishExport();
     }
 
     function importData(file) {
+      if (!file || !file.size) {
+        showToast('Fișier gol — exportă din nou');
+        return;
+      }
       const reader = new FileReader();
       reader.onload = () => {
         try {
-          Object.assign(state, normalizeImportedState(JSON.parse(reader.result)));
+          Object.assign(state, normalizeImportedState(parseImportJson(reader.result)));
           applyState();
           pushHistory('import JSON');
+          save();
           showToast('Date importate');
         } catch (_) {
           showToast('Fișier JSON invalid');
         }
       };
       reader.onerror = () => showToast('Nu s-a putut citi fișierul');
-      reader.readAsText(file);
+      reader.readAsText(file, 'UTF-8');
     }
 
     function showToast(msg) {
