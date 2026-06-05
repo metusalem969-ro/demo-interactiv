@@ -389,8 +389,8 @@
       </div>
 
       <div class="btn-row">
-        <button type="button" class="action secondary" id="btn-export" title="Descarcă date ca fișier text">Exportă</button>
-        <button type="button" class="action secondary" id="btn-import" title="Încarcă date din fișier text">Importă</button>
+        <button type="button" class="action secondary" id="btn-export" title="Descarcă date ca fișier JSON">Exportă</button>
+        <button type="button" class="action secondary" id="btn-import" title="Încarcă date din fișier JSON sau TXT">Importă</button>
         <button type="button" class="action secondary" id="btn-paste" title="Importă JSON din clipboard">Lipește</button>
         <input type="file" id="import-file" accept=".txt,text/plain,.json,application/json,*/*" hidden>
       </div>
@@ -403,7 +403,7 @@
       </div>
     </section>
 
-    <p class="hint">Pe mobil: Export → salvează ca .txt → Reset → Importă. Sau Export → Lipește.</p>
+    <p class="hint">Export → Reset → Importă (.json sau .txt) · sau Lipește</p>
 
     <p class="links">
       <a href="https://github.com/metusalem969-ro/demo-interactiv">GitHub</a>
@@ -614,7 +614,10 @@
         }
       };
       const json = JSON.stringify(payload, null, 2);
-      const filename = 'demo-interactiv-' + new Date().toISOString().slice(0, 10) + '.txt';
+      const filename = 'demo-interactiv-' + new Date().toISOString().slice(0, 10) + '.json';
+      // text/plain evită bug-ul Android: fișiere .json cu MIME application/json
+      // sunt citite greșit de browser, deși conținutul e valid JSON
+      const blob = new Blob([json], { type: 'text/plain;charset=utf-8' });
       rememberExport(json);
 
       const finishExport = async (message) => {
@@ -641,7 +644,7 @@
         }
       }
 
-      downloadBlob(new Blob([json], { type: 'text/plain;charset=utf-8' }), filename);
+      downloadBlob(blob, filename);
       await finishExport();
     }
 
